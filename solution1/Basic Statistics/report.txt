@@ -1,0 +1,8 @@
+#Measure	Value
+Filename	4_age21_S12_L001_R1_001_concat.fastq.gz
+File type	Conventional base calls
+Encoding	Sanger / Illumina 1.9
+Total Sequences	37287903
+Sequences flagged as poor quality	0
+Sequence length	75
+%GC	55

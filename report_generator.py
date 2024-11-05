@@ -1,5 +1,6 @@
 import argparse
 from fastqc_handler import FastQCParser
+import constants as sections
 
 
 def main():
@@ -39,19 +40,48 @@ def main():
 
     fastqc_file_input = args.input_path
     output_folder = args.output_folder_path
-    parser = FastQCParser(fastqc_file_input, output_folder)
 
-    parser.parse_fastqc_to_dictionary()
- 
+    parser_instance = FastQCParser(fastqc_file_input, output_folder)
+
+    parser_instance.parse_fastqc_to_dictionary()
+
+    FastQCParser.print_summary(parser_instance.fastqc_dict[sections.BASIC_STATS]["section_content"])
+
     if args.per_base_seq_qual:
-        parser.get_base()
+        parser_instance.get_base()
 
     if args.per_tile_seq_qual:
-        parser.get_tile_seq()
+        parser_instance.get_tile_seq()
+
+    if args.per_seq_qual_scores:
+        parser_instance.get_seq_qual_scores()
+
+    if args.per_base_seq_content:
+        parser_instance.get_base_seq_content()
+
+    if args.per_seq_GC_cont:
+        parser_instance.get_seq_gc_content()
+
+    if args.per_base_N_cont:
+        parser_instance.get_base_n_content()
+
+    if args.seq_len_dist:
+        parser_instance.get_seq_len_dist()
+
+    if args.seq_dup:
+        parser_instance.get_seq_dup()
+
+    if args.over_seq:
+        parser_instance.get_overep_seq()
+
+    if args.adap_cont:
+        parser_instance.get_adap_cont()
+
+    if args.kmer_count:
+        parser_instance.get_kmer_cont()
 
     if args.all:
-        parser.get_all()
-    
+        parser_instance.get_all()
 
-if(__name__ == "__main__"):
+if __name__ == "__main__":
     main()
