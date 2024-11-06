@@ -11,4 +11,3 @@ SEQ_DUPLICATION_LEVEL = 'Sequence Duplication Levels'
 OVERREPRESENTED_SEQ = 'Overrepresented sequences'
 ADAPTER_CONTENT = 'Adapter Content'
 KMER_CONTENT = 'Kmer Content'
-    

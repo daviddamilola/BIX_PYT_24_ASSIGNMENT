@@ -1,9 +1,10 @@
 """Module providing a class for processing fastqc files."""
+# David Oluwasusi 6th November 2024
 
 import re
 import sys
 import constants as sections
-import section_model as se
+import models as se
 
 class FastQCParser:
     """
@@ -43,7 +44,7 @@ class FastQCParser:
         Prints a provided summary.
 
         Args:
-            summary (str): A summary string to print.
+            summary (List): A summary list of strings to print.
         """
         print("".join(summary))
 
@@ -114,7 +115,7 @@ class FastQCParser:
         data = self.fastqc_dict[sections.BASIC_STATS]["section_content"]
         flag = self.fastqc_dict[sections.BASIC_STATS]["status"]
         output = self.output_folder
-        section = se.BaseSection(title=title, data=data, flag=flag, output_folder=output)
+        section = se.BaseStatsSection(title=title, data=data, flag=flag, output_folder=output)
         section.write_report()
         section.write_flag()
 
@@ -188,10 +189,10 @@ class FastQCParser:
         data = self.fastqc_dict[sections.SEQ_LEN_DIST]["section_content"]
         flag = self.fastqc_dict[sections.SEQ_LEN_DIST]["status"]
         output = self.output_folder
-        section = se.SeqLenDistSection(title=title, data=data, flag=flag, output_folder=output)
+         # using the base class here because we dont need to do any plots for this section
+        section = se.Section(title=title, data=data, flag=flag, output_folder=output)
         section.write_flag()
         section.write_report()
-        section.plot_section()
 
     def get_seq_dup(self):
         """parses the sequence duplication level section
@@ -212,10 +213,10 @@ class FastQCParser:
         data = self.fastqc_dict[sections.OVERREPRESENTED_SEQ]["section_content"]
         flag = self.fastqc_dict[sections.OVERREPRESENTED_SEQ]["status"]
         output = self.output_folder
-        section = se.OverRepresentedSeqSection(title, data, flag, output_folder=output)
+        # using the base class here because we dont need to do any plots for this section
+        section = se.Section(title, data, flag, output_folder=output)
         section.write_flag()
         section.write_report()
-        section.plot_section()
 
     def get_adap_cont(self):
         """parses the adapter content section

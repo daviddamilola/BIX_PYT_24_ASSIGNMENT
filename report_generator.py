@@ -1,12 +1,21 @@
+"""Entry point to the fastqc report generator cli tool."""
+# David Oluwasusi 6th November 2024
+
 import argparse
 from fastqc_handler import FastQCParser
 import constants as sections
 
 
 def main():
+    """
+     Setup positional and optional arguments to parse fastqc files.
+     it also handles the options that the user passes in
+    """
     #Description
-    parser = argparse.ArgumentParser(description=""" This
-    script parses FastQC text files and makes reports and plots based on the options passed to it.""")
+    parser = argparse.ArgumentParser(description="""
+        This script parses FastQC text files and makes 
+        reports and plots based on the options passed to it.
+        """)
 
     #Compulsory parameters
     parser.add_argument("input_path", metavar="FastQC input_path", type=str, help="FastQC input file path.")
