@@ -4,7 +4,7 @@ It inherits from Section model
 """
 # David Oluwasusi 6th November 2024
 
-
+import sys
 import os
 import pandas as pd
 import seaborn as sns
@@ -32,18 +32,43 @@ class SeqDuplicationLevelSection(Section):
     def plot_section(self):
         # Load the data from a text file, assuming it's tab-separated
         file_path = os.path.join(self.output_folder, self.title, 'report.txt')
-        data = pd.read_csv(file_path, sep='\t', skiprows=1)
-        # Convert the 'Duplication Level' column to a categorical type to preserve order
-        data['#Duplication Level'] = pd.Categorical(
+        try:
+            data = pd.read_csv(file_path, sep='\t', skiprows=1)
+        except FileNotFoundError:
+            print(f"Error: The file '{file_path}' was not found.")
+            sys.exit(1)
+        except pd.errors.EmptyDataError:
+            print(f"Error: The file '{file_path}' is empty.")
+            sys.exit(1)
+        except pd.errors.ParserError:
+            print(f"Error: The file '{file_path}' could not be parsed. Please check the file format.")
+            sys.exit(1)
+
+        try:
+            data['#Duplication Level'] = pd.Categorical(
             data['#Duplication Level'],
             categories=data['#Duplication Level'].unique(),
             ordered=True
         )
+        except KeyError as kerr:
+            print(f"Error '{kerr}': The column #Duplication Level does not exist.")
+            sys.exit(1)
+        # end try
+        # Convert the 'Duplication Level' column to a categorical type to preserve order
+       
         # Create the plot
         plt.figure(figsize=(14, 8))
         # Plot both "Percentage of deduplicated" and "Percentage of total" as bars
-        sns.barplot(data=data, x='#Duplication Level', y='Percentage of deduplicated', color='skyblue', label='Percentage of Deduplicated')
-        sns.barplot(data=data, x='#Duplication Level', y='Percentage of total', color='salmon', label='Percentage of Total', alpha=0.7)
+        try:
+            sns.barplot(data=data, x='#Duplication Level', y='Percentage of deduplicated', color='skyblue', label='Percentage of Deduplicated')
+            sns.barplot(data=data, x='#Duplication Level', y='Percentage of total', color='salmon', label='Percentage of Total', alpha=0.7)
+            plt.grid(True, linestyle='--', linewidth=0.5)
+        except ValueError as ve:
+            print(f"ValueError while creating plot: {ve}. Please check the data values.")
+            sys.exit(1)
+        except TypeError as te:
+            print(f"TypeError while creating plot: {te}. Verify data types in the 'report.txt' file.")
+            sys.exit(1)
         # Add titles and labels
         plt.title('Sequence Duplication Level Distribution')
         plt.xlabel('Duplication Level')
@@ -53,11 +78,21 @@ class SeqDuplicationLevelSection(Section):
         # Enable grid lines for better readability
         plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
         # Ensure the output folder exists
-        plot_folder = os.path.join(self.output_folder, self.title)
-        os.makedirs(plot_folder, exist_ok=True)
+        try:
+            plot_folder = os.path.join(self.output_folder, self.title)
+            os.makedirs(plot_folder, exist_ok=True)
         # Define the path to save the plot
-        output_path = os.path.join(plot_folder, 'sequence_duplication_level_plot.png')
+            output_path = os.path.join(plot_folder, 'sequence_duplication_level_plot.png')
         # Save the plot
-        plt.savefig(output_path)
+            plt.savefig(output_path)
+        except PermissionError:
+            print(f"PermissionError: Insufficient permissions to save the plot to '{output_path}'.")
+            sys.exit(1)
+        except FileNotFoundError:
+            print(f"FileNotFoundError: The path '{output_path}' is invalid. Please verify the output folder structure.")
+            sys.exit(1)
+        except IOError as ioe:
+            print(f"IOError: Could not save the plot to '{output_path}': {ioe}")
+            sys.exit(1)
         plt.close()  # Close the plot to free memory
         print(f"Plot saved to {output_path}")

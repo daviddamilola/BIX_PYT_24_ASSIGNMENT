@@ -1,6 +1,7 @@
 """model to manage the adapter content section of the fastqc files"""
 # David Oluwasusi 6th November 2024
 
+import sys
 import os
 import pandas as pd
 import seaborn as sns
@@ -27,13 +28,30 @@ class AdapterContentSection(Section):
     def plot_section(self):
         # Load the data from a text file, assuming it's tab-separated
         file_path = os.path.join(self.output_folder, self.title, 'report.txt')
-        data = pd.read_csv(file_path, sep='\t')
+        try:
+            data = pd.read_csv(file_path, sep='\t')
+        except FileNotFoundError:
+            print(f"Error: The file '{file_path}' was not found.")
+            sys.exit(1)
+        except pd.errors.EmptyDataError:
+            print(f"Error: The file '{file_path}' is empty.")
+            sys.exit(1)
+        except pd.errors.ParserError:
+            print(f"Error: The file '{file_path}' could not be parsed. Please check the file format.")
+            sys.exit(1)
         # Melt the data for easier plotting with seaborn
         data_melted = data.melt(id_vars=['#Position'], var_name='Adapter Type', value_name='Content')
         # Create the plot
         plt.figure(figsize=(14, 8))
         # Plot each adapter type's content across positions
-        sns.lineplot(data=data_melted, x='#Position', y='Content', hue='Adapter Type', marker='o')
+        try:
+            sns.lineplot(data=data_melted, x='#Position', y='Content', hue='Adapter Type', marker='o')
+        except ValueError as ve:
+            print(f"ValueError while creating plot: {ve}. Please check the data values.")
+            sys.exit(1)
+        except TypeError as te:
+            print(f"TypeError while creating plot: {te}. Verify data types in the 'report.txt' file.")
+            sys.exit(1)
         # Add titles and labels
         plt.title('Adapter Content Across Positions')
         plt.xlabel('Position')
@@ -46,6 +64,16 @@ class AdapterContentSection(Section):
         # Define the path to save the plot
         output_path = os.path.join(plot_folder, 'adapter_content_plot.png')
         # Save the plot
-        plt.savefig(output_path)
+        try:
+            plt.savefig(output_path)
+        except PermissionError:
+            print(f"PermissionError: Insufficient permissions to save the plot to '{output_path}'.")
+            sys.exit(1)
+        except FileNotFoundError:
+            print(f"FileNotFoundError: The path '{output_path}' is invalid. Please verify the output folder structure.")
+            sys.exit(1)
+        except IOError as ioe:
+            print(f"IOError: Could not save the plot to '{output_path}': {ioe}")
+            sys.exit(1)
         plt.close()  # Close the plot to free memory
         print(f"Plot saved to {output_path}")

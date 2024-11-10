@@ -46,7 +46,10 @@ class FastQCParser:
         Args:
             summary (List): A summary list of strings to print.
         """
+        print(">>Basic Statistics")
+        print("")
         print("".join(summary))
+        print(">>END_MODULE")
 
     def parse_fastqc_to_dictionary(self):
         """converts fastqc file to a dictionary where the key is the title of the section.
@@ -55,7 +58,7 @@ class FastQCParser:
         Returns:
             Dictionary: {
                 "section_content": list of each line in the section
-                "status": string(pass | fail | warn) which represents the result of the section
+                "status": string (pass | fail | warn) which represents the result of the section
             }
         """
         try:
@@ -115,7 +118,7 @@ class FastQCParser:
         data = self.fastqc_dict[sections.BASIC_STATS]["section_content"]
         flag = self.fastqc_dict[sections.BASIC_STATS]["status"]
         output = self.output_folder
-        section = se.BaseStatsSection(title=title, data=data, flag=flag, output_folder=output)
+        section = se.Section(title=title, data=data, flag=flag, output_folder=output)
         section.write_report()
         section.write_flag()
 

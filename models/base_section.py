@@ -38,10 +38,12 @@ class Section:
                 f.write(data_content)
             print("Report successfully written to", report_path)
 
-        except OSError as e:
-            print(f"Error creating directory or writing file: {e}")
         except IOError as e:
             print(f"Error with file I/O: {e}")
+
+        except OSError as e:
+            print(f"Error creating directory or writing file: {e}")
+       
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
