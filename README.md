@@ -2,10 +2,6 @@
 
 # Documentation
 
-```
-ByOluwasusiDavid
-StudentNumber: 447435
-```
 
 ## TableOf Contents
 
