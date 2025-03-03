@@ -161,5 +161,4 @@ If an error occurs, the program exits with a **non-zero exit code** and prints a
 
 ---
 
-This concludes the **Fastqc Reporter Technical Documentation**.
 
