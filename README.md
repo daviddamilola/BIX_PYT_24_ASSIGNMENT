@@ -1,445 +1,165 @@
-# Fastqc Reporter Technical
+# Fastqc Reporter Technical Documentation
 
-# Documentation
+## By Oluwasusi David  
 
+---
 
-## TableOf Contents
+## Table of Contents
 
-- Introduction..................................................................................................................................
-- Installation....................................................................................................................................
-- ProgramDesign...........................................................................................................................
-   - OverviewofFunctionality...................................................................................................
-- FolderStructure...........................................................................................................................
-- DependenciesUsed...................................................................................................................
-- ExampleUsage..........................................................................................................................
-   - OptionsandResults.........................................................................................................
-      - PerTileSequenceQualitySection............................................................................
-         - PlotOutput:..........................................................................................................
-         - Interpretation:.......................................................................................................
-      - PerSequenceQualityScoresSection.......................................................................
-         - Plotoutput............................................................................................................
-         - Interpretation:.......................................................................................................
-      - PerbasesequencecontentSection..........................................................................
-         - Plotoutput:...........................................................................................................
-         - Interpretation:.......................................................................................................
-      - PersequenceGCcontentSection.............................................................................
-         - Interpretation:.......................................................................................................
-         - Plotoutput............................................................................................................
-      - PerbaseNcontentSection.......................................................................................
-         - Interpretation:.......................................................................................................
-         - Plotoutput............................................................................................................
-      - SequenceLengthDistributionSection.......................................................................
-      - SequenceDuplicationLevelsSection........................................................................
-         - Plotoutput:...........................................................................................................
-      - Overrepresentedsequencessection.........................................................................
-      - AdapterContentSection............................................................................................
-         - Interpretation:.......................................................................................................
-         - Plotoutput:...........................................................................................................
-      - K-merContentSection...............................................................................................
-         - Interpretation:.......................................................................................................
-         - Plotoutput:...........................................................................................................
-- ErrorHandling............................................................................................................................
-- References.................................................................................................................................
+1. [Introduction](#introduction)
+2. [Installation](#installation)
+3. [Program Design](#program-design)
+   - [Overview of Functionality](#overview-of-functionality)
+   - [Folder Structure](#folder-structure)
+   - [Dependencies Used](#dependencies-used)
+4. [Example Usage](#example-usage)
+   - [Options and Results](#options-and-results)
+5. [Error Handling](#error-handling)
+6. [References](#references)
 
+---
 
-## Introduction..................................................................................................................................
+## Introduction
+Fastqc reporter is a **Command Line Interface (CLI) tool** built to parse fastqc files into sections and generate reports. It also generates graphical representations and a flag file indicating the QC test result (`pass`, `fail`, or `warn`).
 
-FastqcreporterisaCommandLineInterface(CLI)toolbuilttoparsefastqcfilesintothe
-availablesectionsandgeneratereportscontainingthesectioncontents.Italsogeneratesa
-graphicalrepresentationofthesectionandaflagfilecontainingtheresultoftheQCtest,which
-canbethevaluespass,fail,orwarn.
+---
 
-## Installation....................................................................................................................................
+## Installation
+To run this program, the following are required:
 
-Torunthisprogram,thefollowingarerequired;
+- Python 3.9 or higher
+- Conda or venv (Conda is used in this documentation)
+
+To create a new virtual environment and install dependencies:
+
+```sh
+conda create -c conda-forge -n name_of_my_env seaborn pandas matplotlib
+```
+
+Activate the virtual environment:
+
+```sh
+source activate name_of_my_env
+```
+
+Run the program with its parameters (refer to the [Example Usage](#example-usage) section).
+
+---
+
+## Program Design
+Fastqc reporter follows an **object-oriented approach** with two main classes:
+
+- **FastQCParser**
+- **Section**
+
+The `FastQCParser` class parses fastqc files into sections and manages optional parameters. The `Section` class writes reports and flag files for each section.
+
+Each section inherits from the base `Section` class and defines its own implementation of the `plot_section()` method to generate the necessary plots.
+
+### Overview of Functionality
+Fastqc reporter uses Python's `argparse` module to handle command-line arguments. Required parameters:
+
+- Path to the fastqc file
+- Output folder for plots, reports, and flag files
+
+Optional parameters are handled via `add_argument` with `store_true`, making them optional.
+
+#### Workflow:
+1. Instantiate `FastQCParser` with required parameters.
+2. Parse the fastqc file into a dictionary.
+3. Handle optional parameters and call appropriate methods.
+4. Generate reports, plots, and flag files.
+
+---
+
+### Folder Structure
+The script is structured as follows:
 
 ```
-● FromPython3.9upwards.
-● Condaorvenv(condaisusedforthescriptinthisdocumentation).
+fastqc_reporter/
+│── fastqc_reporter.py  # Entry point, defines parser options
+│── constants.py  # Defines section titles
+│── model/  # Contains all classes used in the script
+│   ├── __init__.py
+│   ├── section.py
+│   ├── fastqc_parser.py
+│── data/  # Contains test fastqc files
 ```
-Thenextstepistocreateanewvirtualenvironmentandinstallthedependencies.
 
->>$ conda create -c conda-forge -n name_of_my_env seaborn pandas
-matplotlib
+---
 
-Thiswillcreateacondaenvironmentandinstalltheseaborn,pandas,andmatplotlib
-dependencies.Afterwards,activatethevirtualenvironmentbydoing;
+### Dependencies Used
 
->>$ source activate name_of_my_env
+- **Matplotlib** & **Seaborn** - For plotting graphs
+- **Pandas** - To extract and manage section data using `pandas.read_csv()`
 
-Finally,runtheprogramwithitsrequiredparametersandoptionalparameters.SeetheExample
-Usagesectionformoreinfo.
+---
 
-## ProgramDesign...........................................................................................................................
+## Example Usage
 
-Fastqcreportertakesanobject-orientedapproachtoparsingfastqcfilesandgenerating
-appropriatereportsandgraphs.Twomainclassesexist;
+To run the program in its default form:
 
+```sh
+python3 fastqc_reporter.py ./data/fastqc_data1.txt ./solution1/
 ```
-● FastQCParser
-● Section
+
+### Output Example:
 ```
-The FastQCParser class encapsulatesthefunctionalitiesofparsingthefastqcfilesinto
-sectionsanddefinesthemethodstohandlethesupportedoptionalparameterswhenpassed.
-
-TheSection classencapsulatesthefunctionalitiesofwritingeachsection’sreportandflagfile
-toitsappropriatefolderdependingontheoptionalparameterspassed.
-
-
-EachsectionhasitsclassandinheritsfromthebaseSectionclass.Allthepropertiesofthe
-sectionclassareinheritedanditnowdefinesitsimplementationoftheplot_section()
-method.Thismethodplotsthenecessarygraphthatsuitsthetypeofdatathesectioncontains.
-
-ThedataineachsectionisrepresentedinternallyasaPythondictionary,wherethekeys
-representthetitleofeachsectionandthevaluesareanotherdictionaryhavingthesection
-contentandthefastqcteststatus.
-
-Adictionarywasusedastheinternaldatastructurebecauseitenablesustoparsethefileonce
-intomemoryandpickeachsectioneffortlessly.
-
-### OverviewofFunctionality...................................................................................................
-
-Fastqcreportermakesuseoftheargparse modulefromPythontoaddadescriptionofwhat
-thetoolisfor.Italsoaddsalistofparameters.Twoparametersarerequiredtorunthescript;
-
-```
-● Thepathtothefastqcfile
-● Thefoldertooutputtheplots,reports,andflag
-```
-Otheroptionalparametersaredefinedviatheadd_argument methodoftheargparse
-module.Theyareoptionalbecausetheactionparameterissettostore_true,whichsaves
-themifavailable.
-
-TheFastQCParser Classisinstantiatedwiththetworequiredparameters,andanempty
-dictionaryiscreated.Theparse_fastqc_to_dictionary()methodoftheclassiscalledto
-readthefile,andeachsectionissavedintothedictionarywiththesectiontitleasthekey.
-
-
-**Figure2:** Flowchartdiagramfortheparse_fastqc_to_dictionary()method.
-
-Theprogramthencheckstoseeifanyoptionalargumentsarepassedinthecommandlineand
-callstheappropriatemethodtohandleit.TheFastQCParser classdefinesmethodsto
-handleallthesections.
-
-Theconceptdiagramillustratingthestructureoftheprogramisshownbelow.
-
-
-**Figure3:** FlowchartdiagramforFastqcreporterprogram.
-
-
-**Figure4:** ClassdiagramfortheFastQCParserclassshowingitsattributesandmethodsto
-handlesectionsofthefastqcfile.
-
-Allthemethodsforeachoptiondothefollowing;
-
-```
-● CreatetheappropriateSectionclass.
-● Writetherequiredoutputs(report.txt,flag.txt,plot.png)tothefolderspecified.
-```
-Thebasestatisticsarealwaysprintedtotheconsole,regardlessofthesectionthatisrun.This
-ispossiblebecauseofthestaticmethodprint_summary().
-
-Toseethelistofoptions,passthe-hor--help optiontothefastqc_reporterscript.
-
-**Terminal**
->>$ python3 fastqc_reporter.py ./data/fastqc_data1.txt ./solution1/
--h
-
-
-**Output**
-
-**Figure5:** Theoutputofrunningthehelpoptiontofastqc_reporter
-
-EachsectioniscreatedfromthebaseclassSection. Thisclassdefinesattributesand
-methodstocreateareport.txtfileandflag.txtfile.
-
-```
-Figure6: ClassdiagramfortheSectionclass
-```
-IndividualsectionsthenextendtheSection class andaddamethodtoplotthegraphsbased
-onthesectiondata.
-
-
-**Figure7:** ClassdiagramfortheModelspackagedepictinginheritanceperspecificsection.
-
-## FolderStructure...........................................................................................................................
-
-Thefastqcreporterisstructuredintofourmainfilesandfolders;
-
-```
-● Themodelfolder.
-● Theconstants.pyfile.
-● Thefastqc_reporter.pyfile.
-● Thedatafolder.
-```
-Theentrypointisthefastqc_reporter.py file,itdefinesalltheparseroptionsandcallsthe
-appropriatefunctiontohandletheoptionspassed.ItusestheFastQCParser classtocreate
-theparserinstancetohandletheoptionsprovided.
-
-
-Theconstants.py file createsthetitlesofeachsection.Thisisnecessaryformaintainability
-asitletsushaveasinglepointtochangethetitlesifneededsincetheyareusedinseveral
-placesacrosstheprogram.
-
-Themodelfoldercontainsalltheclassesusedinthescript.Itispackagedasamodulewiththe
-__init__.pyfile,withthis,the fastqc_reporter.py filecanaccessalltheclasses
-underthemodel namespace.
-
-Thedatafoldercontainstheexampletestfastqcfilesusedtotestthefunctionalityofthe
-fastqc_reporter.pyscript.
-
-Thepicturebelowshowsthefolderstructureforthecorefunctionalityofthefastqcreporter.
-
-**Figure8:** Imageshowingthefolderstructureforthefastqcreporterscript.
-
-
-## DependenciesUsed...................................................................................................................
-
-MatplotlibwasusedtogetherwithSeaborntoplotthegraphsforeachsection.Seaborn’s
-plottingfunctionswereusedfordifferentkindsofplotsasappropriate(SeabornDocumentation,
-n.d.).
-
-PandasLibrarywasusedtoextractthedataineachsectionintoadataframe.The
-pandas.read_csv()methodwasusedtoreadthereport.txtfilesintoadataframe.(Pandas
-Documentation,n.d.).
-
-## ExampleUsage..........................................................................................................................
-
-Aftersettinguptheenvironmentandinstallingthenecessarydependencies,theprogramcanbe
-runinitsdefaultformlikethis;
-
->>$ python3 fastqc_reporter.py ./data/fastqc_data1.txt ./solution1/
-
-Thefirstparameteristhepathtothefastqcfileandthesecondistheoutputfolderpath.The
-resultofthebasestatisticsisprintedtotheconsole.
-
-$>>Basic Statistics pass
-
+Basic Statistics pass
 #Measure Value
 Filename 4_age21_S12_L001_R2_001_concat.fastq.gz
 File type Conventional base calls
-Encoding Sanger / Illumina 1.
+Encoding Sanger / Illumina 1.9
 Total Sequences 37287903
 Sequences flagged as poor quality 0
 Sequence length 75
 %GC 55
->>END_MODULE
+```
 
-### OptionsandResults.........................................................................................................
+---
 
-Therearedifferentoptionspersection.Theusercanpassanoptionormultipleoptionsto
-specifywhichsectiontorun,alsotheusercanpassthe-aor--alloptiontoprocessallthe
-sections.
+## Options and Results
+Users can specify sections to run using options:
 
-Theresultsinthisreportwereforthefastqctestfile(fastqc_data1.txt)locatedinthedata
-folder.Theoutputsweresavedtothesolution1folder.
+| Option | Description |
+|--------|-------------|
+| `-t` / `--per_tile_seq_qual` | Per Tile Sequence Quality |
+| `-s` / `--per_seq_qual_scores` | Per Sequence Quality Scores |
+| `-c` / `--per_base_seq_content` | Per Base Sequence Content |
+| `-g` / `--per_seq_GC_cont` | Per Sequence GC Content |
+| `-n` / `--per_base_N_cont` | Per Base N Content |
+| `-l` / `--seq_len_dist` | Sequence Length Distribution |
+| `-d` / `--seq_dup` | Sequence Duplication Levels |
+| `-o` / `--over_seq` | Overrepresented Sequences |
+| `-p` / `--adap_cont` | Adapter Content |
+| `-k` / `--kmer_count` | K-mer Content |
+| `-a` / `--all` | Run all sections |
 
-Foreachrun,thebasicstatisticsarealwaysprintedtotheconsole;
+---
 
+## Error Handling
+The script implements error handling using Python's `try-except` block to manage:
 
-$>>Basic Statistics pass
+- Invalid user input
+- Malformed fastqc files
+- File permission errors
+- Parsing errors
 
-#Measure Value
-Filename 4_age21_S12_L001_R2_001_concat.fastq.gz
-File type Conventional base calls
-Encoding Sanger / Illumina 1.
-Total Sequences 37287903
-Sequences flagged as poor quality 0
-Sequence length 75
-%GC 55
->>END_MODULE
+If an error occurs, the program exits with a **non-zero exit code** and prints an error message.
 
-#### PerTileSequenceQualitySection............................................................................
+---
 
-Option: -t or --per_tile_seq_qual
+## References
 
-##### PlotOutput:..........................................................................................................
+- Akalin, A. (2020). *Computational genomics with R* (Chapter 7: Quality check on sequencing reads). [Bookdown](https://compgenomr.github.io/book/quality-check-on-sequencing-reads.html)
+- Babraham Institute. (n.d.). *FastQC per tile sequence quality analysis.* [FastQC Help](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/12%20Per%20Tile%20Sequence%20Quality.html)
+- Kong, Y. (2011). *Btrim: A fast, lightweight adapter and quality trimming program for next-generation sequencing technologies.* [Genomics](https://doi.org/10.1016/j.ygeno.2011.05.009)
+- Illumina. (2018). *Ask a scientist - What is GC-Bias?* [YouTube](https://www.youtube.com/watch?v=wdEb3chYFOw)
+- O'Rawe, J. F., Ferson, S., & Lyon, G. (2015). *Accounting for uncertainty in DNA sequencing data.* [Trends in Genetics](https://doi.org/10.1016/j.tig.2014.12.002)
+- Pandas Documentation. [pandas.read_csv](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html)
+- Seaborn Documentation. [Seaborn functions](https://seaborn.pydata.org/tutorial/function_overview.html)
 
-**Figure9:** Heatmapshowingtheper-tilesequencequalityacrossbasepositions.
+---
 
-
-##### Interpretation:.......................................................................................................
-
-##### Interpretation:.......................................................................................................
-
-Theplotshowsthatthemeanqualityscoresacrossthetilesarehighandconsistent.However,
-therearepatchesofbluewhichindicatethelowerqualityregions.Thiscanresultfromsystemic
-issueswiththosetilesorerrorsintroducedduringsequencing(BabrahamInstitute,n.d.).
-
-#### PerSequenceQualityScoresSection.......................................................................
-
-Option: -s or --per_seq_qual_scores
-
-##### Plotoutput............................................................................................................
-
-**Figure10:** Barplotshowingtheper-tilesequencequalityacrossbasepositions.
-
-Interpretation:
-
-Thedistributionofthequalityscoresishighlyskewedtotheright,indicatingthatmostreadsare
-highquality.Aqualityscoreof 40 indicatesveryconfidentbasecallswithaverylowprobability
-oferror.Phredsscoreof 40 correspondstoanerrorprobabilityof0.0001(O'Raweetal.,2015).
-
-
-#### PerbasesequencecontentSection..........................................................................
-
-Option: -c or --per_base_seq_content
-
-##### Plotoutput:...........................................................................................................
-
-**Figure11:** LinePlotshowingtheper-basesequencecontentacrossbasepositions.
-
-##### Interpretation:.......................................................................................................
-
-##### Interpretation:.......................................................................................................
-
-Accordingtotheplotabove,thereisaslightlyhigherpercentageofGandCcomparedtoAand
-Tthroughoutthereadlength.DependingontheexpectedGCcontentofthetargetgenomeor
-transcriptome,thiscouldindicateaGCbiasinthelibrarypreparationorsequencing.(Illumina,
-2018)
-
-#### PersequenceGCcontentSection.............................................................................
-
-Option: -g or --per_seq_GC_cont
-
-
-##### Interpretation:.......................................................................................................
-
-Accordingtotheplotbelow,TheGCcontentdistributionishighestaround55-60%,whichmay
-indicatethatmostreadshaveaGCcontentinthisrange.TheGCcontentdistributionis
-relativelysymmetric,indicatingthatthelibrarypreparationandsequencingprocesseswere
-successful,withminimalGC-relatedbias.(Illumina,2018)
-
-##### Plotoutput............................................................................................................
-
-**Figure12:** LinePlotshowingtheper-sequenceGCcontentdistributionacrossbasepositions.
-
-#### PerbaseNcontentSection.......................................................................................
-
-Option: -n or --per_base_N_cont
-
-Interpretation:
-
-Thelineplotstartswithaspikeatbaseposition1.Aftertheinitialbase,theNcontentdropsto
-almost0%andremainsconsistentlylow,indicatinggoodsequencingqualityfortherestofthe
-read.
-
-
-Trimmingcanbeemployedforthefirstbasefromeachreadtoimprovetheoverallqualityofthe
-dataandensureoptimalperformanceindownstreamanalyses.
-
-##### Plotoutput............................................................................................................
-
-**Figure13:** LinePlotshowingtheperbaseNcontentdistributionacrossbasepositions.
-
-#### SequenceLengthDistributionSection.......................................................................
-
-Option: -l or --seq_len_dist
-Plotoutput:NotApplicable
-
-#### SequenceDuplicationLevelsSection........................................................................
-
-Option: -d or --seq_dup
-
-Interpretation:
-
-Intheplotbelowaround 70%ofthereadsareunique,whichisgoodintermsoflibrarydiversity.
-Thereisanoticeablelevelofduplication,withaspikeinthe>10duplicationcategory,
-suggestingpotentialPCRamplificationbias.(Akalin,2020).
-
-
-##### Plotoutput:...........................................................................................................
-
-**Figure14:** BarPlotshowingthesequenceduplicationleveldistribution.
-
-#### Overrepresentedsequencessection.........................................................................
-
-Option: -o or --over_seq
-Plotoutput: NotApplicable
-
-#### AdapterContentSection............................................................................................
-
-Option: -p or --adap_cont
-
-##### Interpretation:.......................................................................................................
-
-TheplotbelowshowsthattheIlluminaUniversalAdapterispresentinasmallbutincreasing
-percentageofreadstowardtheendofthesequences.
-
-Theremainingadaptertypes(IlluminaSmallRNAAdapter,NexteraTransposaseSequence,
-andSOLIDSmallRNAAdapter)havelittletonopresence,whichindicatesthatthereiseffective
-trimmingorthattheadaptersaretotallyabsent.
-
-Usingadaptertrimmingtools(e.g.Btrim)isrecommendedtoimprovethequalityofthedataand
-ensurethatthedatasetisreadyforfurtherprocessingwithoutbiasorartifacts.(Kong,2011).
-
-
-##### Plotoutput:...........................................................................................................
-
-**Figure15:** LineplotshowingtheAdaptercontentacrosspositions.
-
-#### K-merContentSection...............................................................................................
-
-Option: -k or --kmer_count
-
-##### Interpretation:.......................................................................................................
-
-Theplotindicatesthatcertaink-mers,suchasCCCACGTandCGGGCAT,arehighly
-over-represented,withcountsexceeding10,000occurrences.
-
-Thisover-representationcouldindicateadaptercontamination,PCRbias,orlowlibrary
-complexity.(Akalin,2020).
-
-
-##### Plotoutput:...........................................................................................................
-
-**Figure16:** LineplotshowingtheKmercontentacrosspositions.
-
-**AllSections**
-Option: -a or --a
-Plotoutput:runsalltheplotsforeachsectionwhereapplicable,asdescribedabove.
-
-## ErrorHandling............................................................................................................................
-
-ErrorswerehandledwiththenativePythontry: exceptconstruct.Errorsthatmayarisefrom
-baduserinput,malformedfastqcfiledata,filewritingpermissions,andfileparsingarehandled
-appropriately.
-
-Theprogramwillexitwithanon-zeroexitcodeifitencountersanerrorandwillprinttheerrorto
-theconsole.
-
-
-## References.................................................................................................................................
-
-Akalin,A.(2020). _ComputationalgenomicswithR_
-(Chapter7:Qualitycheck,processingandalignmentofhigh-throughputsequencing
-reads).Bookdown.
-https://compgenomr.github.io/book/quality-check-on-sequencing-reads.html
-
-BabrahamInstitute.(n.d.).
-_FastQCpertilesequencequalityanalysis_.
-https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modu
-les/12%20Per%20Tile%20Sequence%20Quality.html
-
-Kong,Y.(2011).
-Btrim:Afast,lightweightadapterandqualitytrimmingprogramfornext-generation
-sequencingtechnologies. _Genomics, 98_ (2),152-153.
-https://doi.org/10.1016/j.ygeno.2011.05.
-
-Illumina.(2018,September26).
-_Askascientist-WhatisGC-Bias?_ [Video].YouTube.
-https://www.youtube.com/watch?v=wdEb3chYFOw
-
-O'Rawe,J.F.,Ferson,S.,&Lyon,G.(2015,February1).
-AccountingforuncertaintyinDNAsequencingdata. _TrendsinGenetics, 31_ (2),61–66.
-https://doi.org/10.1016/j.tig.2014.12.
-
-PandasDocumentation.(n.d.).
-_pandas.read_csv_ .In _Pandasdocumentation_.
-https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html#pandas.read_csv
-
-SeabornDocumentation.(n.d.).
-_Overviewofseabornplottingfunctions_ .In _Seaborndocumentation_.
-https://seaborn.pydata.org/tutorial/function_overview.html
-
+This concludes the **Fastqc Reporter Technical Documentation**.
 
